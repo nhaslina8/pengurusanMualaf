@@ -56,3 +56,28 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Environment Switching (Local vs UAT)
+
+This project supports two sample environment templates:
+
+- `.env.local.example` for local MySQL development
+- `.env.uat.example` for UAT SQL Server access
+
+Use one of the following PowerShell commands from the project root to switch quickly:
+
+```powershell
+# Switch to local template
+Copy-Item .env.local.example .env -Force
+php artisan config:clear
+
+# Switch to UAT template
+Copy-Item .env.uat.example .env -Force
+php artisan config:clear
+```
+
+For UAT, replace `DB_PASSWORD=CHANGE_ME` with the actual credential.
+
+### Important UAT Note
+
+The UAT database uses legacy table names (for example `MaklumatMuallaf`, `AkaunPenggunaMain`) and is not managed by Laravel migration history (`migrations` table is missing). Avoid running `php artisan migrate` directly on UAT unless you have a dedicated migration strategy for that schema.

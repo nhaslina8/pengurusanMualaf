@@ -1,8 +1,8 @@
 <x-app-layout>
-    <div class="bg-white  shadow rounded-lg">
-        <div class="px-6 py-4 border-b border-gray-200 
-            <h2 class="text-xl font-bold text-[#1b1b18]  Maklumat Muallaf</h2>
-            <p class="text-sm text-gray-600  mt-1">Nama Islam: <strong>{{ $muallaf->NamaIslam }}</strong></p>
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <h2 class="text-2xl font-bold text-gray-900">Kemaskini Muallaf</h2>
+            <p class="text-sm text-gray-600 mt-1">Nama Islam: <strong>{{ $muallaf->NamaIslam }}</strong></p>
         </div>
 
         <form action="{{ route('muallafs.update', $muallaf->Id) }}" method="POST" class="p-6">
@@ -11,8 +11,7 @@
 
             @include('muallafs.form')
 
-            <!-- Buttons -->
-            <div class="flex gap-4 mt-8 pt-6 border-t border-gray-200 
+            <div class="flex gap-4 mt-8 pt-6 border-t border-gray-200">
                 <button type="submit" class="inline-flex items-center px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition">
                     Simpan Perubahan
                 </button>

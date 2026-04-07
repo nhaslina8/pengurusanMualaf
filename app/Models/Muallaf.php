@@ -9,7 +9,7 @@ class Muallaf extends Model
 {
     use HasFactory;
 
-    protected $table = 'maklumat_muallafs';
+    protected $table = 'MaklumatMuallaf';
     protected $primaryKey = 'Id';
     public $timestamps = false;
     
