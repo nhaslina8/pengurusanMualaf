@@ -20,7 +20,7 @@ class MuallafFactory extends Factory
             'BilDaftar' => $this->faker->numerify('REF####'),
             'Jantina' => $this->faker->randomElement(['L', 'P']),
             'Bangsa' => $this->faker->randomElement(['Melayu', 'Arab', 'China', 'India']),
-            'KategoriMuallaf' => $this->faker->randomElement(['Baru', 'Lama']),
+            'KategoriMuallaf' => $this->faker->randomElement(['Malaysia', 'Sabah', 'Sarawak', 'Orang Asli', 'Bukan Warganegara']),
             'NoTel1' => $this->faker->numerify('01#########'),
             'TarikhIslam' => $this->faker->date(),
             'Alamat1' => $this->faker->address(),

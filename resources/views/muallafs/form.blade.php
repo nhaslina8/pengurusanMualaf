@@ -96,8 +96,11 @@
             class="w-full px-4 py-2 border border-gray-300  rounded-md   focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
             <option value="">-- Pilih Kategori --</option>
-            <option value="Baru" {{ old('KategoriMuallaf', $muallaf->KategoriMuallaf ?? '') === 'Baru' ? 'selected' : '' }}>Baru</option>
-            <option value="Lama" {{ old('KategoriMuallaf', $muallaf->KategoriMuallaf ?? '') === 'Lama' ? 'selected' : '' }}>Lama</option>
+            <option value="Malaysia" {{ old('KategoriMuallaf', $muallaf->KategoriMuallaf ?? '') === 'Malaysia' ? 'selected' : '' }}>Malaysia</option>
+            <option value="Sabah" {{ old('KategoriMuallaf', $muallaf->KategoriMuallaf ?? '') === 'Sabah' ? 'selected' : '' }}>Sabah</option>
+            <option value="Sarawak" {{ old('KategoriMuallaf', $muallaf->KategoriMuallaf ?? '') === 'Sarawak' ? 'selected' : '' }}>Sarawak</option>
+            <option value="Orang Asli" {{ old('KategoriMuallaf', $muallaf->KategoriMuallaf ?? '') === 'Orang Asli' ? 'selected' : '' }}>Orang Asli</option>
+            <option value="Bukan Warganegara" {{ old('KategoriMuallaf', $muallaf->KategoriMuallaf ?? '') === 'Bukan Warganegara' ? 'selected' : '' }}>Bukan Warganegara</option>
         </select>
     </div>
 
