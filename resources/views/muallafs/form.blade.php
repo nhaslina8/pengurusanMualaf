@@ -5,6 +5,21 @@
 >
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Bil Daftar -->
+    <div>
+        <label for="BilDaftar" class="block text-sm font-medium text-gray-900 mb-2">
+            Bil Daftar
+        </label>
+        <input 
+            type="text" 
+            id="BilDaftar" 
+            name="BilDaftar" 
+            value="{{ old('BilDaftar', $muallaf->BilDaftar ?? '') }}"
+            class="w-full px-4 py-2 border border-gray-300  rounded-md   focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Masukkan bil daftar"
+        >
+    </div>
+
     <!-- Nama Islam -->
     <div>
         <label for="NamaIslam" class="block text-sm font-medium text-gray-900 mb-2">
