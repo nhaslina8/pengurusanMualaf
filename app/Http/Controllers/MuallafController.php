@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Mastercode;
 use App\Models\Muallaf;
+use App\Models\UploadFileMuallaf;
 use Illuminate\Http\Request;
 
 class MuallafController extends Controller
@@ -58,8 +59,24 @@ class MuallafController extends Controller
         $jantinaLabel = $this->resolveMastercodeDescription('JANTINA', $muallaf->Jantina);
         $daerahLabel = $this->resolveMastercodeDescription('DAERAH', $muallaf->Daerah);
         $bankLabel = $this->resolveMastercodeDescription('BANK', $muallaf->KodBank);
+        $lampiranTypeLabels = [
+            'NOKP' => 'Lampiran NoKP',
+            'KAD_ISLAM' => 'Lampiran Kad Islam',
+            'AKAUN_BANK' => 'Lampiran Akaun Bank',
+            'SURAT_BERMAUSTATIN' => 'Lampiran Surat Bermaustatin',
+        ];
 
-        return view('muallafs.show', compact('muallaf', 'jantinaLabel', 'daerahLabel', 'bankLabel'));
+        try {
+            $lampiranMuallaf = UploadFileMuallaf::query()
+                ->where('REFNO', $muallaf->Id)
+                ->where('TYPE', 'MUALLAF')
+                ->orderBy('ORDERNO')
+                ->get();
+        } catch (\Throwable $e) {
+            $lampiranMuallaf = collect();
+        }
+
+        return view('muallafs.show', compact('muallaf', 'jantinaLabel', 'daerahLabel', 'bankLabel', 'lampiranMuallaf', 'lampiranTypeLabels'));
     }
 
     /**

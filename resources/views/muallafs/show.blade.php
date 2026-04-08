@@ -138,6 +138,37 @@
                 </div>
             </div>
 
+            <div class="md:col-span-2 bg-white shadow rounded-lg p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">Lampiran</h3>
+
+                @if(($lampiranMuallaf ?? collect())->isEmpty())
+                    <p class="text-gray-500">Tiada lampiran.</p>
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-200">
+                                    <th class="text-left px-3 py-2">Jenis</th>
+                                    <th class="text-left px-3 py-2">Nama Fail</th>
+                                    <th class="text-left px-3 py-2">Saiz</th>
+                                    <th class="text-left px-3 py-2">Lokasi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($lampiranMuallaf as $lampiran)
+                                    <tr class="border-b border-gray-100">
+                                        <td class="px-3 py-2">{{ $lampiranTypeLabels[$lampiran->TYPE2] ?? $lampiran->TYPE2 ?? '-' }}</td>
+                                        <td class="px-3 py-2">{{ $lampiran->FILE_NAME ?? '-' }}</td>
+                                        <td class="px-3 py-2">{{ isset($lampiran->FILE_SIZE) ? number_format((int) $lampiran->FILE_SIZE / 1024, 2) . ' KB' : '-' }}</td>
+                                        <td class="px-3 py-2 break-all text-gray-600">{{ $lampiran->FILE_LOC ?? '-' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+
             @if($muallaf->Catatan)
                 <div class="md:col-span-2 bg-white shadow rounded-lg p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">Catatan</h3>

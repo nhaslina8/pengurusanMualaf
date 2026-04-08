@@ -339,4 +339,74 @@
             >
         </div>
     </div>
+
+    <!-- Lampiran Dinamik -->
+    <div class="mt-6">
+        <div class="flex items-center justify-between mb-3">
+            <label class="block text-sm font-medium text-gray-900">Lampiran</label>
+            <button type="button" id="add-lampiran-btn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition">
+                + Tambah Lampiran
+            </button>
+        </div>
+
+        <div id="lampiran-list" class="space-y-3"></div>
+
+        <template id="lampiran-template">
+            <div class="lampiran-row grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end border border-gray-200 rounded-md p-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-2">Jenis Lampiran</label>
+                    <select name="attachment_type2[]" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Pilih Jenis Lampiran --</option>
+                        <option value="NOKP">Lampiran NoKP</option>
+                        <option value="KAD_ISLAM">Lampiran Kad Islam</option>
+                        <option value="AKAUN_BANK">Lampiran Akaun Bank</option>
+                        <option value="SURAT_BERMAUSTATIN">Lampiran Surat Bermaustatin</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-900 mb-2">Fail</label>
+                    <input type="file" name="attachment_files[]" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" accept=".pdf,.jpg,.jpeg,.png,.webp">
+                    <p class="text-xs text-gray-500 mt-1">Format: PDF/JPG/PNG/WEBP, max 5MB</p>
+                </div>
+
+                <div>
+                    <button type="button" class="remove-lampiran-btn px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition">
+                        Buang
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const list = document.getElementById('lampiran-list');
+    const template = document.getElementById('lampiran-template');
+    const addButton = document.getElementById('add-lampiran-btn');
+
+    if (!list || !template || !addButton) {
+        return;
+    }
+
+    const addLampiranRow = () => {
+        const clone = template.content.cloneNode(true);
+        list.appendChild(clone);
+    };
+
+    addButton.addEventListener('click', addLampiranRow);
+
+    list.addEventListener('click', function (event) {
+        const target = event.target;
+        if (!target.classList.contains('remove-lampiran-btn')) {
+            return;
+        }
+
+        const row = target.closest('.lampiran-row');
+        if (row) {
+            row.remove();
+        }
+    });
+});
+</script>

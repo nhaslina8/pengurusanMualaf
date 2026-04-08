@@ -5,7 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Mastercode;
 use App\Models\Muallaf;
+use App\Models\UploadFileMuallaf;
+use App\Services\SynologyFileService;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
@@ -46,7 +51,12 @@ class MuallafController extends Controller
             $validated = $request->validate($this->rules());
             $validated['IdPenggunaMain'] = $validated['IdPenggunaMain'] ?? 0;
 
-            $muallaf = Muallaf::create($validated);
+            $muallaf = DB::transaction(function () use ($validated, $request) {
+                $muallaf = Muallaf::create($validated);
+                $this->storeAttachments($request, $muallaf);
+
+                return $muallaf;
+            });
 
             return response()->json([
                 'success' => true,
@@ -59,6 +69,13 @@ class MuallafController extends Controller
                 'message' => 'Ralat validasi.',
                 'errors' => $e->errors(),
             ], 422);
+        } catch (\Throwable $e) {
+            Log::error('Gagal simpan muallaf.', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ralat semasa menyimpan rekod muallaf.',
+            ], 500);
         }
     }
 
@@ -93,7 +110,10 @@ class MuallafController extends Controller
             $validated = $request->validate($this->rules());
             $validated['IdPenggunaMain'] = $validated['IdPenggunaMain'] ?? ($muallaf->IdPenggunaMain ?? 0);
 
-            $muallaf->update($validated);
+            DB::transaction(function () use ($muallaf, $validated, $request) {
+                $muallaf->update($validated);
+                $this->storeAttachments($request, $muallaf->fresh());
+            });
 
             return response()->json([
                 'success' => true,
@@ -111,6 +131,13 @@ class MuallafController extends Controller
                 'message' => 'Ralat validasi.',
                 'errors' => $e->errors(),
             ], 422);
+        } catch (\Throwable $e) {
+            Log::error('Gagal kemas kini muallaf.', ['error' => $e->getMessage(), 'id' => $id]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ralat semasa mengemas kini rekod muallaf.',
+            ], 500);
         }
     }
 
@@ -188,6 +215,75 @@ class MuallafController extends Controller
             'Pendakwah' => 'nullable|string|max:150',
             'Catatan' => 'nullable|string',
             'Status' => 'nullable|in:A,I',
+            'attachment_type2' => 'sometimes|array',
+            'attachment_type2.*' => 'nullable|in:NOKP,KAD_ISLAM,AKAUN_BANK,SURAT_BERMAUSTATIN',
+            'attachment_files' => 'sometimes|array',
+            'attachment_files.*' => 'nullable|file|max:5120|mimes:pdf,jpg,jpeg,png,webp',
         ];
+    }
+
+    /**
+     * Store uploaded attachment metadata into UPLOAD_FILE_MUALLAF.
+     */
+    private function storeAttachments(Request $request, Muallaf $muallaf): void
+    {
+        $files = $request->file('attachment_files', []);
+        $types = $request->input('attachment_type2', []);
+
+        if (!is_array($files) || empty($files)) {
+            return;
+        }
+
+        if (!Schema::hasTable((new UploadFileMuallaf())->getTable())) {
+            return;
+        }
+
+        $synologyService = app(SynologyFileService::class);
+        $orderNo = (int) (UploadFileMuallaf::query()
+            ->where('REFNO', $muallaf->Id)
+            ->where('TYPE', 'MUALLAF')
+            ->pluck('ORDERNO')
+            ->map(fn ($value) => (int) $value)
+            ->max() ?? 0);
+
+        $syncBy = optional($request->user())->name ?? 'system';
+
+        foreach ($files as $index => $file) {
+            if (!$file instanceof UploadedFile) {
+                continue;
+            }
+
+            $type2 = $types[$index] ?? null;
+            if (empty($type2)) {
+                continue;
+            }
+
+            try {
+                $uploadResult = $synologyService->upload($file, 'muallaf/' . $muallaf->Id . '/' . strtolower($type2));
+                $orderNo++;
+
+                UploadFileMuallaf::create([
+                    'REFNO' => (string) $muallaf->Id,
+                    'TYPE' => 'MUALLAF',
+                    'REFNO2' => $muallaf->NoKP,
+                    'TYPE2' => $type2,
+                    'ORDERNO' => (string) $orderNo,
+                    'FILE_NAME' => $uploadResult['file_name'] ?? $file->getClientOriginalName(),
+                    'FILE_LOC' => $uploadResult['file_loc'] ?? null,
+                    'FILE_DATA' => null,
+                    'SYNCB' => $syncBy,
+                    'SYNCD' => now(),
+                    'FILE_SIZE' => $file->getSize(),
+                    'CONTENT_TYPE' => $file->getClientMimeType(),
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Lampiran gagal disimpan.', [
+                    'muallaf_id' => $muallaf->Id,
+                    'type2' => $type2,
+                    'file' => $file->getClientOriginalName(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 }

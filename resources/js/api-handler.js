@@ -34,29 +34,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 : '/api/muallafs';
             
             console.log(`📡 Routing to API: ${method} ${apiEndpoint}`);
-            
-            // Prepare request data
-            const requestData = {};
-            for (let [key, value] of formData) {
-                if (key !== '_token' && key !== '_method') {
-                    requestData[key] = value;
-                }
+
+            if (isUpdate) {
+                formData.set('_method', 'PUT');
             }
-            
-            console.log('📦 Payload:', requestData);
+
+            console.log('📦 Payload type: multipart/form-data');
+            logFormData(formData);
             
             try {
                 showLoadingState(true);
                 console.log('⏳ Loading state: ON');
                 
                 const response = await fetch(apiEndpoint, {
-                    method: isUpdate ? 'PUT' : 'POST',
+                    method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': formData.get('_token'),
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify(requestData),
+                    body: formData,
                 });
                 
                 console.log(`📨 Response received: Status ${response.status}`);
@@ -267,4 +263,16 @@ function persistLastApiCall(url, method, status, responseBody) {
     } catch (error) {
         console.warn('Gagal simpan rekod API terakhir.', error);
     }
+}
+
+function logFormData(formData) {
+    const entries = [];
+    for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+            entries.push({ key, file: value.name, size: value.size, type: value.type });
+        } else {
+            entries.push({ key, value });
+        }
+    }
+    console.log('📦 FormData entries:', entries);
 }

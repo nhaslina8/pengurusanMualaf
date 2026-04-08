@@ -5,7 +5,7 @@
             <p class="text-sm text-gray-600 mt-1">Nama Islam: <strong>{{ $muallaf->NamaIslam }}</strong></p>
         </div>
 
-        <form action="{{ route('muallafs.update', $muallaf->Id) }}" method="POST" class="p-6">
+        <form action="{{ route('muallafs.update', $muallaf->Id) }}" method="POST" enctype="multipart/form-data" class="p-6">
             @csrf
             @method('PUT')
 

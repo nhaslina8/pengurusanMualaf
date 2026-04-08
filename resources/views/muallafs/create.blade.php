@@ -5,7 +5,7 @@
             <p class="text-sm text-gray-600 mt-1">Sila isi borang di bawah untuk menambah rekod muallaf baru</p>
         </div>
 
-        <form action="{{ route('muallafs.store') }}" method="POST" class="p-6">
+        <form action="{{ route('muallafs.store') }}" method="POST" enctype="multipart/form-data" class="p-6">
             @csrf
 
             @include('muallafs.form')
