@@ -1,83 +1,194 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Pengurusan Muallaf
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem Laravel untuk pengurusan rekod muallaf dengan pendekatan hybrid:
 
-## About Laravel
+- Web route + Blade untuk paparan UI
+- API route untuk operasi data (create, update, delete)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Dokumen ini bertujuan beri gambaran penuh architecture supaya developer baru boleh terus faham aliran projek.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 1) Ringkasan Architecture
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Komponen utama
 
-## Learning Laravel
+- Frontend UI: Blade (`resources/views/muallafs/*`)
+- Web controller: `app/Http/Controllers/MuallafController.php`
+- API controller: `app/Http/Controllers/Api/MuallafController.php`
+- Model utama: `app/Models/Muallaf.php`
+- Model rujukan kod: `app/Models/Mastercode.php`
+- Model lampiran: `app/Models/UploadFileMuallaf.php`
+- Service upload fail: `app/Services/SynologyFileService.php`
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Konsep hybrid Web + API
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- User buka page melalui route web (`/muallafs`, `/muallafs/create`, dll).
+- Bila submit form (create/edit/delete), JavaScript akan intercept dan call endpoint API (`/api/muallafs...`).
+- API controller yang urus validasi, transaksi DB, dan response JSON.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## 2) Aliran Request End-to-End
 
-## Agentic Development
+### A. Listing / paparan page
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+1. Browser buka `/muallafs`.
+2. `routes/web.php` hantar ke `MuallafController@index`.
+3. Controller query data dan return `view('muallafs.index')`.
 
-```bash
-composer require laravel/boost --dev
+### B. Create Muallaf
 
-php artisan boost:install
+1. User buka `/muallafs/create`.
+2. Web controller return `muallafs.create` + option mastercode.
+3. User klik Simpan.
+4. Script `public/js/api-handler.js` intercept submit form.
+5. Script hantar `POST /api/muallafs` (multipart/form-data).
+6. API controller validate + simpan data + simpan lampiran.
+7. API pulangkan JSON success, frontend redirect ke `/muallafs`.
+
+### C. Update Muallaf
+
+1. User buka `/muallafs/{id}/edit`.
+2. Submit form di-intercept oleh `api-handler.js`.
+3. Script hantar `POST /api/muallafs/{id}` + `_method=PUT`.
+4. API controller update rekod + lampiran.
+
+### D. Delete Muallaf
+
+1. User klik Padam di page list/show.
+2. Form delete di-intercept oleh `api-handler.js`.
+3. Script hantar `DELETE /api/muallafs/{id}`.
+4. API controller padam rekod dan return JSON.
+
+## 3) Route Mapping
+
+### Web routes (`routes/web.php`)
+
+- `Route::resource('muallafs', MuallafController::class)`
+- Digunakan untuk page rendering (index/create/show/edit).
+
+Nota penting:
+
+- Method `store`, `update`, `destroy` dalam web controller sengaja `abort(405)`.
+- Operasi write dipaksa melalui API controller.
+
+### API routes (`routes/api.php`)
+
+- `Route::apiResource('muallafs', Api\MuallafController::class)->names('api.muallafs')`
+- Endpoint utama:
+	- `GET /api/muallafs`
+	- `POST /api/muallafs`
+	- `GET /api/muallafs/{id}`
+	- `PUT/PATCH /api/muallafs/{id}`
+	- `DELETE /api/muallafs/{id}`
+
+## 4) Struktur Folder Penting
+
+```text
+app/
+	Http/
+		Controllers/
+			MuallafController.php            # web rendering
+			Api/
+				MuallafController.php          # API CRUD + validation + transaction
+	Models/
+		Muallaf.php
+		Mastercode.php
+		UploadFileMuallaf.php
+	Services/
+		SynologyFileService.php            # upload lampiran
+
+resources/
+	views/
+		components/
+			app-layout.blade.php             # layout + load api-handler.js
+		muallafs/
+			index.blade.php
+			create.blade.php
+			edit.blade.php
+			form.blade.php
+			show.blade.php
+	js/
+		app.js
+		api-handler.js                     # source JS versi Vite (opsyen)
+
+public/
+	js/
+		api-handler.js                     # script yang sedang digunakan oleh layout
+
+routes/
+	web.php
+	api.php
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## 5) View Muallafs Yang Digunakan
 
-## Contributing
+Semua fail dalam `resources/views/muallafs/` berikut digunakan:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- `index.blade.php`
+- `create.blade.php`
+- `edit.blade.php`
+- `show.blade.php`
+- `form.blade.php` (partial yang di-include oleh create/edit)
 
-## Code of Conduct
+## 6) DB dan UAT Notes
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- UAT guna nama table legacy PascalCase (contoh: `MaklumatMuallaf`, `AkaunPenggunaMain`).
+- UAT tiada table migration Laravel (`migrations`) secara default.
+- Elakkan run `php artisan migrate` terus pada UAT tanpa strategi migration khas.
+- Untuk UAT, disyorkan guna:
+	- `CACHE_STORE=file`
+	- `SESSION_DRIVER=file`
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-## Environment Switching (Local vs UAT)
-
-This project supports two sample environment templates:
-
-- `.env.local.example` for local MySQL development
-- `.env.uat.example` for UAT SQL Server access
-
-Use one of the following PowerShell commands from the project root to switch quickly:
+## 7) Setup Ringkas (Local)
 
 ```powershell
-# Switch to local template
+composer install
+npm install
+Copy-Item .env.example .env -Force
+php artisan key:generate
+php artisan config:clear
+```
+
+Jalankan server:
+
+```powershell
+php artisan serve
+```
+
+Jika guna Vite dev mode:
+
+```powershell
+npm run dev
+```
+
+## 8) Environment Switching (Local vs UAT)
+
+Project ini ada template environment:
+
+- `.env.local.example` untuk local MySQL
+- `.env.uat.example` untuk UAT SQL Server
+
+Contoh tukar environment:
+
+```powershell
+# Guna local
 Copy-Item .env.local.example .env -Force
 php artisan config:clear
 
-# Switch to UAT template
+# Guna UAT
 Copy-Item .env.uat.example .env -Force
 php artisan config:clear
 ```
 
-For UAT, replace `DB_PASSWORD=CHANGE_ME` with the actual credential.
+Untuk UAT, pastikan `DB_PASSWORD` diisi dengan credential sebenar.
 
-### Important UAT Note
+## 9) Nota Untuk Developer Baru
 
-The UAT database uses legacy table names (for example `MaklumatMuallaf`, `AkaunPenggunaMain`) and is not managed by Laravel migration history (`migrations` table is missing). Avoid running `php artisan migrate` directly on UAT unless you have a dedicated migration strategy for that schema.
+- Jangan keliru antara web controller dan API controller.
+- UI masih Blade, tetapi write operation pergi ke API.
+- Jika ubah behavior submit form, semak `public/js/api-handler.js` dahulu.
+- Jika ubah validation/business rule write, semak `app/Http/Controllers/Api/MuallafController.php`.
+
+## 10) Cadangan Penambahbaikan (Technical Debt)
+
+- Sekarang ada `api-handler.js` di `resources/js` dan `public/js`.
+- Script yang diload oleh layout ialah versi `public/js/api-handler.js`.
+- Disyorkan standardize ke satu sumber sahaja (prefer Vite `resources/js/api-handler.js`) untuk elak divergence code.
