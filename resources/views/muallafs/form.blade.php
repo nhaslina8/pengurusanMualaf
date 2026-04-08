@@ -80,8 +80,11 @@
             class="w-full px-4 py-2 border border-gray-300  rounded-md   focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
             <option value="">-- Pilih Jantina --</option>
-            <option value="L" {{ old('Jantina', $muallaf->Jantina ?? '') === 'L' ? 'selected' : '' }}>Lelaki</option>
-            <option value="P" {{ old('Jantina', $muallaf->Jantina ?? '') === 'P' ? 'selected' : '' }}>Perempuan</option>
+            @foreach(($jantinaOptions ?? collect()) as $option)
+                <option value="{{ $option->Code }}" {{ old('Jantina', $muallaf->Jantina ?? '') === $option->Code ? 'selected' : '' }}>
+                    {{ $option->Description }}
+                </option>
+            @endforeach
         </select>
     </div>
 
@@ -198,14 +201,18 @@
         <label for="Daerah" class="block text-sm font-medium text-gray-900 mb-2">
             Daerah
         </label>
-        <input 
-            type="text" 
+        <select 
             id="Daerah" 
-            name="Daerah" 
-            value="{{ old('Daerah', $muallaf->Daerah ?? '') }}"
+            name="Daerah"
             class="w-full px-4 py-2 border border-gray-300  rounded-md   focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Cth: Petaling"
         >
+            <option value="">-- Pilih Daerah --</option>
+            @foreach(($daerahOptions ?? collect()) as $option)
+                <option value="{{ $option->Code }}" {{ old('Daerah', $muallaf->Daerah ?? '') === $option->Code ? 'selected' : '' }}>
+                    {{ $option->Description }}
+                </option>
+            @endforeach
+        </select>
     </div>
 
     <!-- Pendakwah -->
@@ -304,14 +311,18 @@
             <label for="KodBank" class="block text-sm font-medium text-gray-900 mb-2">
                 Kod Bank
             </label>
-            <input 
-                type="text" 
+            <select 
                 id="KodBank" 
-                name="KodBank" 
-                value="{{ old('KodBank', $muallaf->KodBank ?? '') }}"
+                name="KodBank"
                 class="w-full px-4 py-2 border border-gray-300  rounded-md   focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Cth: 012"
             >
+                <option value="">-- Pilih Bank --</option>
+                @foreach(($bankOptions ?? collect()) as $option)
+                    <option value="{{ $option->Code }}" {{ old('KodBank', $muallaf->KodBank ?? '') === $option->Code ? 'selected' : '' }}>
+                        {{ $option->Description }}
+                    </option>
+                @endforeach
+            </select>
         </div>
 
         <div>

@@ -43,15 +43,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Jantina</p>
-                        <p class="text-gray-900 font-medium">
-                            @if($muallaf->Jantina === 'L')
-                                Lelaki
-                            @elseif($muallaf->Jantina === 'P')
-                                Perempuan
-                            @else
-                                -
-                            @endif
-                        </p>
+                        <p class="text-gray-900 font-medium">{{ $jantinaLabel ?? $muallaf->Jantina ?? '-' }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Bangsa</p>
@@ -127,7 +119,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Daerah</p>
-                        <p class="text-gray-900 font-medium">{{ $muallaf->Daerah ?? '-' }}</p>
+                        <p class="text-gray-900 font-medium">{{ $daerahLabel ?? $muallaf->Daerah ?? '-' }}</p>
                     </div>
                 </div>
             </div>
@@ -137,7 +129,7 @@
                 <div class="space-y-3">
                     <div>
                         <p class="text-sm text-gray-600">Kod Bank</p>
-                        <p class="text-gray-900 font-medium">{{ $muallaf->KodBank ?? '-' }}</p>
+                        <p class="text-gray-900 font-medium">{{ $bankLabel ?? $muallaf->KodBank ?? '-' }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">No. Akaun Bank</p>

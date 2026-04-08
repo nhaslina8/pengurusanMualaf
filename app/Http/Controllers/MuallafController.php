@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Mastercode;
 use App\Models\Muallaf;
 use Illuminate\Http\Request;
 
@@ -33,7 +34,9 @@ class MuallafController extends Controller
      */
     public function create()
     {
-        return view('muallafs.create');
+        [$jantinaOptions, $daerahOptions, $bankOptions] = $this->getMastercodeOptions();
+
+        return view('muallafs.create', compact('jantinaOptions', 'daerahOptions', 'bankOptions'));
     }
 
     /**
@@ -51,7 +54,12 @@ class MuallafController extends Controller
     public function show(string $id)
     {
         $muallaf = Muallaf::findOrFail($id);
-        return view('muallafs.show', compact('muallaf'));
+
+        $jantinaLabel = $this->resolveMastercodeDescription('JANTINA', $muallaf->Jantina);
+        $daerahLabel = $this->resolveMastercodeDescription('DAERAH', $muallaf->Daerah);
+        $bankLabel = $this->resolveMastercodeDescription('BANK', $muallaf->KodBank);
+
+        return view('muallafs.show', compact('muallaf', 'jantinaLabel', 'daerahLabel', 'bankLabel'));
     }
 
     /**
@@ -60,7 +68,54 @@ class MuallafController extends Controller
     public function edit(string $id)
     {
         $muallaf = Muallaf::findOrFail($id);
-        return view('muallafs.edit', compact('muallaf'));
+        [$jantinaOptions, $daerahOptions, $bankOptions] = $this->getMastercodeOptions();
+
+        return view('muallafs.edit', compact('muallaf', 'jantinaOptions', 'daerahOptions', 'bankOptions'));
+    }
+
+    /**
+     * Get active mastercode options for muallaf form.
+     */
+    private function getMastercodeOptions(): array
+    {
+        try {
+            $records = Mastercode::query()
+                ->select(['Category', 'Code', 'Description', 'OrderNo'])
+                ->whereIn('Category', ['JANTINA', 'DAERAH', 'BANK'])
+                ->where('Status', 'Y')
+                ->orderBy('Category')
+                ->orderBy('OrderNo')
+                ->get()
+                ->groupBy('Category');
+
+            return [
+                $records->get('JANTINA', collect()),
+                $records->get('DAERAH', collect()),
+                $records->get('BANK', collect()),
+            ];
+        } catch (\Throwable $e) {
+            return [collect(), collect(), collect()];
+        }
+    }
+
+    /**
+     * Resolve mastercode description by category and code.
+     */
+    private function resolveMastercodeDescription(string $category, ?string $code): ?string
+    {
+        if (empty($code)) {
+            return null;
+        }
+
+        try {
+            return Mastercode::query()
+                ->where('Category', $category)
+                ->where('Code', $code)
+                ->where('Status', 'Y')
+                ->value('Description');
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

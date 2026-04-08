@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Mastercode;
 use App\Models\Muallaf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 class MuallafController extends Controller
 {
@@ -138,14 +141,38 @@ class MuallafController extends Controller
      */
     private function rules(): array
     {
+        $mastercodeTable = (new Mastercode())->getTable();
+        $hasMastercodeTable = Schema::hasTable($mastercodeTable);
+
+        $jantinaRules = ['nullable', 'string', 'max:10'];
+        $daerahRules = ['nullable', 'string', 'max:100'];
+        $bankRules = ['nullable', 'string', 'max:20'];
+
+        if ($hasMastercodeTable) {
+            $jantinaRules[] = Rule::exists($mastercodeTable, 'Code')
+                ->where(fn ($query) => $query
+                    ->where('Category', 'JANTINA')
+                    ->where('Status', 'Y'));
+
+            $daerahRules[] = Rule::exists($mastercodeTable, 'Code')
+                ->where(fn ($query) => $query
+                    ->where('Category', 'DAERAH')
+                    ->where('Status', 'Y'));
+
+            $bankRules[] = Rule::exists($mastercodeTable, 'Code')
+                ->where(fn ($query) => $query
+                    ->where('Category', 'BANK')
+                    ->where('Status', 'Y'));
+        }
+
         return [
             'IdPenggunaMain' => 'nullable|integer|min:0',
             'NamaIslam' => 'required|string|max:150',
             'NamaAsal' => 'nullable|string|max:150',
             'NoKP' => 'nullable|string|max:20',
-            'Daerah' => 'nullable|string|max:100',
+            'Daerah' => $daerahRules,
             'BilDaftar' => 'nullable|string|max:50',
-            'Jantina' => 'nullable|in:L,P',
+            'Jantina' => $jantinaRules,
             'Bangsa' => 'nullable|string|max:50',
             'KategoriMuallaf' => 'nullable|string|max:50',
             'NoTel1' => 'nullable|string|max:20',
@@ -156,7 +183,7 @@ class MuallafController extends Controller
             'Poskod' => 'nullable|string|max:10',
             'Bandar' => 'nullable|string|max:100',
             'Negeri' => 'nullable|string|max:100',
-            'KodBank' => 'nullable|string|max:20',
+            'KodBank' => $bankRules,
             'NoAkaunBank' => 'nullable|string|max:50',
             'Pendakwah' => 'nullable|string|max:150',
             'Catatan' => 'nullable|string',
