@@ -5,103 +5,95 @@
 const apiDebugMode = new URLSearchParams(window.location.search).has('debugApi')
     || window.localStorage.getItem('debugApi') === '1';
 
+const SUPPORTED_RESOURCES = ['muallafs', 'pendakwahs'];
+
 console.log('✓ API Handler loaded successfully');
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 DOM ready. Setting up form interceptors...');
-    
-    // Handle muallaf form submissions
-    const muallafForm = document.querySelector('form[action*="muallafs"]');
-    
-    if (muallafForm) {
-        console.log('📝 Muallaf form found:', muallafForm.getAttribute('action'));
-        
-        muallafForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            console.log('🚀 Form submitted. Intercepting...');
-            
-            const formData = new FormData(muallafForm);
-            const method = formData.get('_method')?.toUpperCase() || 'POST';
-            const action = muallafForm.getAttribute('action');
-            
-            // Determine if it's create or update based on form action
-            const isUpdate = action.includes('/edit') || method === 'PUT' || method === 'PATCH';
-            const muallafId = extractMuallafId(action);
-            
-            // Build API endpoint
-            const apiEndpoint = isUpdate 
-                ? `/api/muallafs/${muallafId}`
-                : '/api/muallafs';
-            
-            console.log(`📡 Routing to API: ${method} ${apiEndpoint}`);
 
-            if (isUpdate) {
-                formData.set('_method', 'PUT');
-            }
+    const selector = SUPPORTED_RESOURCES.map((resource) => `form[action*="${resource}"]`).join(', ');
+    const resourceForm = document.querySelector(selector);
 
-            console.log('📦 Payload type: multipart/form-data');
-            logFormData(formData);
-            
-            try {
-                showLoadingState(true);
-                console.log('⏳ Loading state: ON');
-                
-                const response = await fetch(apiEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': formData.get('_token'),
-                        'Accept': 'application/json',
-                    },
-                    body: formData,
-                });
-                
-                console.log(`📨 Response received: Status ${response.status}`);
-                
-                const result = await response.json();
-                console.log('✅ JSON parsed:', result);
-                persistLastApiCall(apiEndpoint, isUpdate ? 'PUT' : 'POST', response.status, result);
-                
-                if (response.ok) {
-                    // Success
-                    console.log('✓ API call successful');
-                    showSuccessMessage(result.message || 'Operasi berjaya.');
+    if (resourceForm) {
+        const action = resourceForm.getAttribute('action') || '';
+        const resource = extractResource(action);
 
-                    if (apiDebugMode) {
-                        console.log('Debug mode aktif: redirect dihentikan untuk semakan Network.');
-                    } else {
-                        console.log('🔄 Redirecting to /muallafs in 1.5s...');
-                        setTimeout(() => {
-                            console.log('→ Navigating to /muallafs');
-                            window.location.href = '/muallafs';
-                        }, 1500);
-                    }
-                } else {
-                    // Validation error or server error
-                    console.warn('⚠️ API error:', result);
-                    showErrorMessage(result.message || 'Ralat berlaku.');
-                    displayValidationErrors(result.errors || {});
+        if (resource) {
+            console.log('📝 Resource form found:', action);
+
+            resourceForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                console.log('🚀 Form submitted. Intercepting...');
+
+                const formData = new FormData(resourceForm);
+                const method = formData.get('_method')?.toUpperCase() || 'POST';
+                const isUpdate = method === 'PUT' || method === 'PATCH';
+                const recordId = extractRecordId(action);
+                const apiEndpoint = isUpdate ? `/api/${resource}/${recordId}` : `/api/${resource}`;
+
+                if (isUpdate) {
+                    formData.set('_method', 'PUT');
                 }
-            } catch (error) {
-                console.error('❌ Network error:', error);
-                showErrorMessage('Ralat rangkaian: ' + error.message);
-            } finally {
-                showLoadingState(false);
-                console.log('⏳ Loading state: OFF');
-            }
-        });
-    } else {
-        console.warn('⚠️ Muallaf form not found on this page');
+
+                console.log(`📡 Routing to API: ${method} ${apiEndpoint}`);
+                logFormData(formData);
+
+                try {
+                    showLoadingState(true);
+
+                    const response = await fetch(apiEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': formData.get('_token'),
+                            'Accept': 'application/json',
+                        },
+                        body: formData,
+                    });
+
+                    const result = await parseResponse(response);
+                    persistLastApiCall(apiEndpoint, isUpdate ? 'PUT' : 'POST', response.status, result);
+
+                    if (response.ok) {
+                        showSuccessMessage(result.message || 'Operasi berjaya.');
+
+                        if (apiDebugMode) {
+                            console.log('Debug mode aktif: redirect dihentikan untuk semakan Network.');
+                        } else {
+                            setTimeout(() => {
+                                window.location.href = `/${resource}`;
+                            }, 1500);
+                        }
+                    } else {
+                        showErrorMessage(result.message || 'Ralat berlaku.');
+                        displayValidationErrors(result.errors || {});
+                    }
+                } catch (error) {
+                    console.error('❌ Network error:', error);
+                    showErrorMessage('Ralat rangkaian: ' + error.message);
+                } finally {
+                    showLoadingState(false);
+                }
+            });
+        }
     }
-    
-    // Handle delete actions
+
     setupDeleteHandlers();
 });
 
 /**
- * Extract muallaf ID from form action URL
+ * Extract resource from form action URL
  */
-function extractMuallafId(action) {
-    const match = action.match(/\/(\d+)(?:\/edit)?$/);
+function extractResource(action) {
+    const match = action.match(/\/(muallafs|pendakwahs)(?:\/|$)/);
+    return match ? match[1] : null;
+}
+
+/**
+ * Extract record ID from form action URL
+ */
+function extractRecordId(action) {
+    const match = action.match(/\/(\d+)(?:\/edit)?(?:\?.*)?$/);
     return match ? match[1] : null;
 }
 
@@ -109,11 +101,17 @@ function extractMuallafId(action) {
  * Setup delete button handlers
  */
 function setupDeleteHandlers() {
-    document.querySelectorAll('form[action*="muallafs"][method="POST"]').forEach(form => {
+    const selector = SUPPORTED_RESOURCES
+        .map((resource) => `form[action*="${resource}"][method="POST"]`)
+        .join(', ');
+
+    document.querySelectorAll(selector).forEach(form => {
         const methodInput = form.querySelector('input[name="_method"]');
+        const action = form.getAttribute('action') || '';
+        const resource = extractResource(action);
         
-        if (methodInput && methodInput.value === 'DELETE') {
-            console.log('🗑️ Delete form found:', form.getAttribute('action'));
+        if (methodInput && methodInput.value === 'DELETE' && resource) {
+            console.log('🗑️ Delete form found:', action);
             
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -123,15 +121,16 @@ function setupDeleteHandlers() {
                     return;
                 }
                 
-                const muallafId = extractMuallafId(form.getAttribute('action'));
+                const recordId = extractRecordId(action);
                 const formData = new FormData(form);
                 
-                console.log(`🚀 Delete submitted for ID: ${muallafId}`);
+                console.log(`🚀 Delete submitted for ${resource} ID: ${recordId}`);
                 
                 try {
                     showLoadingState(true);
                     
-                    const response = await fetch(`/api/muallafs/${muallafId}`, {
+                    const endpoint = `/api/${resource}/${recordId}`;
+                    const response = await fetch(endpoint, {
                         method: 'DELETE',
                         headers: {
                             'X-CSRF-TOKEN': formData.get('_token'),
@@ -139,20 +138,16 @@ function setupDeleteHandlers() {
                         },
                     });
                     
-                    console.log(`📨 Delete response: Status ${response.status}`);
-                    
-                    const result = await response.json();
-                    console.log('✅ Response parsed:', result);
-                    persistLastApiCall(`/api/muallafs/${muallafId}`, 'DELETE', response.status, result);
+                    const result = await parseResponse(response);
+                    persistLastApiCall(endpoint, 'DELETE', response.status, result);
                     
                     if (response.ok) {
-                        showSuccessMessage(result.message || 'Muallaf berjaya dipadam.');
+                        showSuccessMessage(result.message || 'Rekod berjaya dipadam.');
                         if (apiDebugMode) {
                             console.log('Debug mode aktif: redirect dihentikan untuk semakan Network.');
                         } else {
-                            console.log('🔄 Redirecting to /muallafs in 1.5s...');
                             setTimeout(() => {
-                                window.location.href = '/muallafs';
+                                window.location.href = `/${resource}`;
                             }, 1500);
                         }
                     } else {
@@ -176,6 +171,10 @@ function setupDeleteHandlers() {
 function showLoadingState(isLoading) {
     const buttons = document.querySelectorAll('button[type="submit"]');
     buttons.forEach(btn => {
+        if (!btn.dataset.originalText) {
+            btn.dataset.originalText = btn.textContent;
+        }
+
         btn.disabled = isLoading;
         if (isLoading) {
             btn.textContent = '⏳ Sila tunggu...';
@@ -262,6 +261,17 @@ function persistLastApiCall(url, method, status, responseBody) {
         }));
     } catch (error) {
         console.warn('Gagal simpan rekod API terakhir.', error);
+    }
+}
+
+async function parseResponse(response) {
+    try {
+        return await response.json();
+    } catch (error) {
+        return {
+            success: false,
+            message: 'Respons API tidak sah (bukan JSON).',
+        };
     }
 }
 

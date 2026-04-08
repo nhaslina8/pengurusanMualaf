@@ -24,13 +24,16 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex items-center justify-between">
                 <h1 class="text-2xl font-bold text-blue-600">
-                    <a href="{{ route('muallafs.index') }}" class="hover:text-blue-800 transition">
-                        🕌 Pengurusan Muallaf
+                    <a href="{{ route('dashboard') }}" class="hover:text-blue-800 transition">
+                        Pengurusan Mualaf
                     </a>
                 </h1>
                 <nav class="space-x-4">
                     <a href="{{ route('muallafs.index') }}" class="text-gray-700 hover:text-blue-600 font-medium transition">
                         Senarai Muallaf
+                    </a>
+                    <a href="{{ route('pendakwahs.index') }}" class="text-gray-700 hover:text-blue-600 font-medium transition">
+                        Senarai Pendakwah
                     </a>
                 </nav>
             </div>
