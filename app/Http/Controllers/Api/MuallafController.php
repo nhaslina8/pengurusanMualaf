@@ -270,7 +270,6 @@ class MuallafController extends Controller
                     'ORDERNO' => (string) $orderNo,
                     'FILE_NAME' => $uploadResult['file_name'] ?? $file->getClientOriginalName(),
                     'FILE_LOC' => $uploadResult['file_loc'] ?? null,
-                    'FILE_DATA' => null,
                     'SYNCB' => $syncBy,
                     'SYNCD' => now(),
                     'FILE_SIZE' => $file->getSize(),
@@ -283,6 +282,8 @@ class MuallafController extends Controller
                     'file' => $file->getClientOriginalName(),
                     'error' => $e->getMessage(),
                 ]);
+
+                throw $e;
             }
         }
     }

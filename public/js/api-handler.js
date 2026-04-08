@@ -5,13 +5,20 @@
 const apiDebugMode = new URLSearchParams(window.location.search).has('debugApi')
     || window.localStorage.getItem('debugApi') === '1';
 
+console.log('✓ API Handler loaded successfully');
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 DOM ready. Setting up form interceptors...');
+    
     // Handle muallaf form submissions
     const muallafForm = document.querySelector('form[action*="muallafs"]');
     
     if (muallafForm) {
+        console.log('📝 Muallaf form found:', muallafForm.getAttribute('action'));
+        
         muallafForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log('🚀 Form submitted. Intercepting...');
             
             const formData = new FormData(muallafForm);
             const method = formData.get('_method')?.toUpperCase() || 'POST';
@@ -26,53 +33,64 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? `/api/muallafs/${muallafId}`
                 : '/api/muallafs';
             
-            // Prepare request data
-            const requestData = {};
-            for (let [key, value] of formData) {
-                if (key !== '_token' && key !== '_method') {
-                    requestData[key] = value;
-                }
+            console.log(`📡 Routing to API: ${method} ${apiEndpoint}`);
+
+            if (isUpdate) {
+                formData.set('_method', 'PUT');
             }
+
+            console.log('📦 Payload type: multipart/form-data');
+            logFormData(formData);
             
             try {
                 showLoadingState(true);
+                console.log('⏳ Loading state: ON');
                 
                 const response = await fetch(apiEndpoint, {
-                    method: isUpdate ? 'PUT' : 'POST',
+                    method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': formData.get('_token'),
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify(requestData),
+                    body: formData,
                 });
                 
+                console.log(`📨 Response received: Status ${response.status}`);
+                
                 const result = await response.json();
+                console.log('✅ JSON parsed:', result);
                 persistLastApiCall(apiEndpoint, isUpdate ? 'PUT' : 'POST', response.status, result);
                 
                 if (response.ok) {
                     // Success
+                    console.log('✓ API call successful');
                     showSuccessMessage(result.message || 'Operasi berjaya.');
 
                     if (apiDebugMode) {
                         console.log('Debug mode aktif: redirect dihentikan untuk semakan Network.');
                     } else {
+                        console.log('🔄 Redirecting to /muallafs in 1.5s...');
                         setTimeout(() => {
+                            console.log('→ Navigating to /muallafs');
                             window.location.href = '/muallafs';
                         }, 1500);
                     }
                 } else {
                     // Validation error or server error
+                    console.warn('⚠️ API error:', result);
                     showErrorMessage(result.message || 'Ralat berlaku.');
                     displayValidationErrors(result.errors || {});
                 }
             } catch (error) {
-                console.error('API Error:', error);
+                console.error('❌ Network error:', error);
                 showErrorMessage('Ralat rangkaian: ' + error.message);
             } finally {
                 showLoadingState(false);
+                console.log('⏳ Loading state: OFF');
             }
         });
+    } else {
+        console.warn('⚠️ Muallaf form not found on this page');
     }
     
     // Handle delete actions
@@ -95,15 +113,20 @@ function setupDeleteHandlers() {
         const methodInput = form.querySelector('input[name="_method"]');
         
         if (methodInput && methodInput.value === 'DELETE') {
+            console.log('🗑️ Delete form found:', form.getAttribute('action'));
+            
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 if (!confirm('Adakah anda pasti untuk padam rekod ini?')) {
+                    console.log('Cancel delete action');
                     return;
                 }
                 
                 const muallafId = extractMuallafId(form.getAttribute('action'));
                 const formData = new FormData(form);
+                
+                console.log(`🚀 Delete submitted for ID: ${muallafId}`);
                 
                 try {
                     showLoadingState(true);
@@ -116,7 +139,10 @@ function setupDeleteHandlers() {
                         },
                     });
                     
+                    console.log(`📨 Delete response: Status ${response.status}`);
+                    
                     const result = await response.json();
+                    console.log('✅ Response parsed:', result);
                     persistLastApiCall(`/api/muallafs/${muallafId}`, 'DELETE', response.status, result);
                     
                     if (response.ok) {
@@ -124,15 +150,17 @@ function setupDeleteHandlers() {
                         if (apiDebugMode) {
                             console.log('Debug mode aktif: redirect dihentikan untuk semakan Network.');
                         } else {
+                            console.log('🔄 Redirecting to /muallafs in 1.5s...');
                             setTimeout(() => {
                                 window.location.href = '/muallafs';
                             }, 1500);
                         }
                     } else {
+                        console.warn('⚠️ Delete error:', result);
                         showErrorMessage(result.message || 'Ralat semasa padam.');
                     }
                 } catch (error) {
-                    console.error('Delete Error:', error);
+                    console.error('❌ Delete network error:', error);
                     showErrorMessage('Ralat rangkaian: ' + error.message);
                 } finally {
                     showLoadingState(false);
@@ -235,4 +263,16 @@ function persistLastApiCall(url, method, status, responseBody) {
     } catch (error) {
         console.warn('Gagal simpan rekod API terakhir.', error);
     }
+}
+
+function logFormData(formData) {
+    const entries = [];
+    for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+            entries.push({ key, file: value.name, size: value.size, type: value.type });
+        } else {
+            entries.push({ key, value });
+        }
+    }
+    console.log('📦 FormData entries:', entries);
 }

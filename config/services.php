@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'synology' => [
+        'ftp_host' => env('SYNOLOGY_FTP_HOST', '172.16.0.44'),
+        'ftp_port' => (int) env('SYNOLOGY_FTP_PORT', 2140),
+        'ftp_user' => env('SYNOLOGY_FTP_USER', 'systm'),
+        'ftp_pass' => env('SYNOLOGY_FTP_PASS', 'Y#hTn*7Z23!$'),
+    ],
+
 ];
